@@ -1,0 +1,424 @@
+
+
+
+  ---
+  FIML: Field Inversion and Machine Learning — Complete Pipeline
+
+  The Problem FIML Solves
+
+  Every RANS turbulence model (SA, k-omega SST, k-epsilon, etc.) is a model — it
+   introduces closure approximations. These approximations work well in some
+  flows (attached boundary layers, mild pressure gradients) and poorly in others
+   (separation, strong curvature, shock-boundary-layer interaction). FIML asks:
+  can we use high-fidelity data (DNS, LES, or experiments) to systematically 
+  correct these models?
+
+  The naive approach would be: just tune the model constants (like C_b1, sigma
+  in SA). But a scalar constant can't fix a model that's wrong differently in
+  different parts of the flow. FIML introduces a spatially varying correction 
+  field — one value per cell.
+
+  ---
+  Part 1: Pen-and-Paper 1D Example
+
+  Consider a 1D steady diffusion-reaction equation — a simplified analogue of a
+  turbulence transport equation:
+
+  -d/dx(nu * du/dx) + S(x)*u = f(x),   x in [0, 1]
+
+  Here:
+  - u(x) is our "flow variable" (analogue of nuTilda or k)
+  - nu is diffusivity
+  - S(x) is a source/sink term (analogue of production/destruction in
+  turbulence)
+  - f(x) is forcing
+
+  Suppose our model uses S_model(x) = S_0 (a constant), but the true physics has
+   S_true(x) that varies with position. Our model gets the wrong answer.
+
+  Step 1: Field Inversion — Finding beta(x)
+
+  We introduce a multiplicative correction field beta(x):
+
+  -d/dx(nu * du/dx) + beta(x) * S_model(x) * u = f(x)
+
+  If beta(x) = S_true(x) / S_model(x), we recover the true solution. But we
+  don't know S_true. What we do have is reference data u_ref(x) (from
+  DNS/experiment).
+
+  Field inversion finds the beta(x) that minimizes:
+
+  J = || u(beta) - u_ref ||^2
+
+  where u(beta) is obtained by solving the PDE with the current beta. This is an
+   optimization problem: the design variables are the beta values at every cell
+  (N cells = N design variables).
+
+  How to get gradients? The adjoint method. For N design variables and 1
+  objective, the adjoint gives dJ/d(beta_i) for all i simultaneously, at cost
+  independent of N. This is what DAFoam's discrete adjoint machinery provides.
+
+  The field inversion loop:
+  1. Initialize beta(x) = 1.0 everywhere (no correction)
+  2. Solve PDE forward: u(beta)
+  3. Evaluate J = || u(beta) - u_ref ||^2
+  4. Solve adjoint: get dJ/d(beta_i) for all cells i
+  5. Update beta: beta_new = beta - alpha * dJ/d(beta)
+  6. Go to 2 until converged
+
+  Result: a beta field that makes the model match the reference data. But this
+  beta field is specific to this one geometry and flow condition. It doesn't
+  generalize.
+
+  Step 2: Feature Engineering — What the NN Sees
+
+  Instead of storing the raw beta(x) and hoping it transfers, we want to learn
+  beta as a function of local flow features — quantities that are available in
+  any flow at any point:
+
+  beta(x) = NN(eta_1(x), eta_2(x), ..., eta_m(x))
+
+  The features eta_i are chosen to be:
+  - Locally computable from the flow solution (no global information)
+  - Galilean invariant (don't change with reference frame)
+  - Physically meaningful for turbulence
+  - Normalized to ~[-1, 1] for NN training stability
+
+  For example, in the 1D analogue:
+  - eta_1 = |du/dx| / (|du/dx| + |u| + eps) — a normalized gradient (analogue of
+   VoS)
+  - eta_2 = source / (source + dissipation + eps) — analogue of PoD
+
+  The normalization pattern A / (A + B + eps) maps values to [0, 1] and avoids
+  division by zero. This is exactly the pattern used throughout DAFoam's feature
+   computation.
+
+  Step 3: NN Training — Replacing beta with a Learned Function
+
+  Now the design variables are no longer the N cell values of beta, but the
+  weights and biases of the neural network (call them theta). The optimization
+  becomes:
+
+  min_theta  J = || u(beta(theta)) - u_ref ||^2
+
+  where:
+  beta_i = NN(eta_1(x_i), ..., eta_m(x_i); theta)   for each cell i
+
+  The gradient chain:
+  dJ/d(theta) = dJ/du * du/d(beta) * d(beta)/d(theta)
+                \_____/   \________/   \_______________/
+                adjoint    primal        NN backprop
+                (DAFoam)   coupling      (DAFoam)
+
+  DAFoam computes this entire chain via its discrete adjoint with automatic
+  differentiation. The NN forward pass is implemented in C++ and is fully
+  differentiable through AD.
+
+  Step 4: Prediction — Using the Trained Model
+
+  Once theta is trained on Case A, you can apply the same NN to Case B
+  (different geometry/conditions). The NN takes the local features from Case B's
+   flow field and predicts a beta field. No re-training needed — the NN has
+  (hopefully) learned a generalizable correction.
+
+  Key Insight: Why This Works
+
+  The field inversion step finds the right answer for one case but doesn't
+  generalize. The ML step finds an approximate answer but expressed in terms of
+  local features that do generalize. The combination leverages the strengths of
+  both: data-driven accuracy + physics-based generalization.
+
+  ---
+  Part 2: Mapping to DAFoam — Every Relevant Component
+
+  2.1 The Beta Field in Turbulence Models
+
+  In DAFoam, the beta field multiplies the production term of the turbulence
+  transport equation. For Spalart-Allmaras (DASpalartAllmaras.C:457):
+
+  == Cb1_ * phase_ * rho * Stilda * nuTilda_ * betaFINuTilda_
+      - fvm::Sp(Cw1_ * phase_ * rho * fw(Stilda) * nuTilda_ / sqr(y_), nuTilda_)
+
+  betaFINuTilda_ is initialized to 1.0 (no correction) at
+  DASpalartAllmaras.C:95-103. It's registered with READ_IF_PRESENT so it can be
+  loaded from disk or overwritten by the regression model.
+
+  Equivalent fields exist for other turbulence models:
+  - k-omega SST: betaFIK_, betaFIOmega_
+  - k-epsilon: betaFIK_, betaFIEpsilon_
+  - k-omega: betaFIK_, betaFIOmega_
+
+  Why multiply production? Production is where the model is most uncertain — it
+  represents the transfer of energy from mean flow to turbulence and is the term
+   most sensitive to the closure assumptions.
+
+  2.2 The Feature Library
+
+  DARegression::calcInputFeatures() at DARegression.C:164-351 computes 11
+  turbulence-aware features. Each follows the normalization pattern A / (A + B +
+   eps):
+  Feature: VoS
+  Formula (simplified): |Omega| / (|Omega| + |S| + eps)
+  Physical meaning: Rotation vs. strain rate. High in vortex cores, ~0.5 in
+    simple shear
+  ────────────────────────────────────────
+  Feature: PoD
+  Formula (simplified): P_k / (P_k + D_k + eps)
+  Physical meaning: Turbulence production vs. destruction. Deviates from 0.5 in
+    non-equilibrium regions
+  ────────────────────────────────────────
+  Feature: chiSA
+  Formula (simplified): nuTilda / (nu + nuTilda + eps)
+  Physical meaning: SA viscosity ratio. Indicates how "turbulent" the flow is
+    locally
+  ────────────────────────────────────────
+  Feature: pGradStream
+  Formula (simplified): (U . grad(p)) / normalize
+  Physical meaning: Pressure gradient aligned with streamlines. Flags
+    adverse/favorable pressure gradients
+  ────────────────────────────────────────
+  Feature: PSoSS
+  Formula (simplified): |grad(p)| / (|grad(p)| + |normal stress| + eps)
+  Physical meaning: Pressure vs. Reynolds normal stress
+  ────────────────────────────────────────
+  Feature: SCurv
+  Formula (simplified): |U . gradU| / (|U.U| + |U.gradU| + eps)
+  Physical meaning: Streamline curvature — where RANS models are known to
+    struggle
+  ────────────────────────────────────────
+  Feature: UOrth
+  Formula (simplified): |U.gradU.U| / (|U| |gradU.U| + |U.gradU.U| + eps)
+  Physical meaning: Non-orthogonality between velocity and its gradient
+  ────────────────────────────────────────
+  Feature: KoU2
+  Formula (simplified): k / (0.5*U^2 + k + eps)
+  Physical meaning: Turbulence intensity relative to mean flow
+  ────────────────────────────────────────
+  Feature: ReWall
+  Formula (simplified): sqrt(k)y / (50nu + sqrt(k)*y + eps)
+  Physical meaning: Wall-distance Reynolds number — near-wall indicator
+  ────────────────────────────────────────
+  Feature: CoP
+  Formula (simplified): Convection / (Convection + Production + eps)
+  Physical meaning: Convection vs. production of TKE
+  ────────────────────────────────────────
+  Feature: TauoK
+  Formula (simplified): |tau| / (k + |tau| + eps)
+  Physical meaning: Anisotropy of Reynolds stress tensor
+  ────────────────────────────────────────
+  Feature: _dt
+  Formula (simplified): (feature - feature_old) / dt
+  Physical meaning: Time derivative of any feature (for unsteady flows)
+  These features are Galilean invariant (they don't depend on the reference
+  frame) and non-dimensional (bounded roughly to [0, 1] before shift/scale).
+  This is by design — it's what allows the NN to generalize across geometries.
+
+  2.3 The Neural Network Forward Pass
+
+  DARegression::compute() at DARegression.C:354-650 implements the forward pass
+  cell-by-cell. For each mesh cell:
+
+  For each cell:
+    counterI = 0  (walks through the flat parameter array)
+
+    Layer 0 (input → first hidden):
+      For each neuron j in hidden layer 0:
+        z_j = sum_i(feature_i * params[counterI++]) + params[counterI++]  (bias)
+        a_j = activation(z_j)
+
+    Layer 1..N-1 (hidden → hidden):
+      For each neuron j in hidden layer L:
+        z_j = sum_k(a_k_prev * params[counterI++]) + params[counterI++]
+        a_j = activation(z_j)
+
+    Output layer (last hidden → single output):
+      output = sum_k(a_k_last * params[counterI++]) + params[counterI++]
+      betaFI[cell] = outputScale * (output + outputShift)
+
+  The parameters are stored in a flat 1D array (parameters_). The total count
+  for a network with m inputs, hidden layers [h1, h2, ...], and 1 output is
+  computed in nParameters() at DARegression.C:652-710:
+
+  weights: m*h1 + h1*h2 + ... + h_{last}*1
+  biases:  h1 + h2 + ... + h_{last} + 1
+
+  For the test case with 7 inputs and [5, 5] hidden layers: 7*5 + 5*5 + 5*1 + 5 
+  + 5 + 1 = 35 + 25 + 5 + 11 = 76 parameters.
+
+  2.4 Input Normalization and Output Denormalization
+
+  Before entering the NN, each feature is transformed (in calcInputFeatures,
+  applied per-cell):
+
+  normalized_feature = (raw_feature + inputShift) * inputScale
+
+  After the NN output:
+
+  betaFI = outputScale * (raw_output + outputShift)
+
+  In the test case (runRegTests_DASimpleFoamRegPar.py:55-56), outputShift = 1.0
+  and outputScale = 1.0. This means when all NN weights are near zero, the
+  output is approximately 1.0 * (0 + 1.0) = 1.0 — no correction. This is the
+  right default: start from the unmodified turbulence model.
+
+  Output bounds (outputUpperBound, outputLowerBound) clip extreme values, and
+  checkOutput() at DARegression.C:712-773 replaces NaN/Inf with
+  defaultOutputValue.
+
+  2.5 Connecting NN Weights as Design Variables
+
+  The key architectural insight: NN weights are treated as design variables in 
+  the optimization. This is done through DAInputRegressionPar, which exposes the
+   flat parameter array to the optimizer.
+
+  In the test case (runRegTests_DASimpleFoamRegPar.py:103-104):
+
+  "inputInfo": {
+      "reg_model": {"type": "regressionPar", "components": ["solver",
+  "function"]},
+  },
+
+  This tells DAFoam: "there's an input called reg_model of type regressionPar
+  that affects both the solver (primal equations via beta) and the function
+  (objectives/constraints)."
+
+  On the Python/OpenMDAO side (runRegTests_DASimpleFoamRegPar.py:124-130):
+
+  nParameters =
+  self.scenario.coupling.solver.DASolver.getNRegressionParameters("reg_model")
+  parameter0 = np.ones(nParameters) * 0.005  # small initial weights
+  self.dvs.add_output("reg_model", val=parameter0)
+  self.connect("reg_model", "scenario.reg_model")
+  self.add_design_var("reg_model", lower=-100.0, upper=100.0, scaler=1.0,
+  indices=[0, 50])
+
+  2.6 The Objective Function for FIML: Variance
+
+  For FIML, the objective is typically a variance (mismatch with reference
+  data). In the test case (runRegTests_DASimpleFoamRegPar.py:66-98), three
+  variance-type functions are defined:
+
+  "UVar": {
+      "type": "variance",
+      "source": "boxToCell",        # compare in a volume region
+      "mode": "field",              # field-based comparison
+      "varName": "U", "varType": "vector",
+  },
+  "PVar": {
+      "type": "variance",
+      "source": "patchToFace",      # compare on a boundary patch
+      "mode": "surface",            # surface-based comparison
+      "varName": "p", "varType": "scalar",
+  },
+  "UProbe": {
+      "type": "variance",
+      "source": "allCells",
+      "mode": "probePoint",         # compare at discrete probe locations
+      "probePointCoords": [[0.51, 0.52, 0.53], [0.2, 0.3, 0.4]],
+  },
+
+  The variance function computes J = sum( (u_computed - u_ref)^2 ) over the
+  specified region. The reference data (u_ref) comes from the getFIData utility
+  or is provided externally. Three modes handle different experimental data
+  types: volume field data, surface measurements, and point probes.
+
+  2.7 The Complete FIML Optimization Loop
+
+  Putting it all together, here's what happens during a DAFoam FIML run:
+
+  1. INITIALIZE
+     - Read mesh, options, reference data
+     - Create DARegression with NN architecture
+     - Initialize NN weights theta ~= 0 (so beta ~= 1.0, no correction)
+
+  2. FOR EACH OPTIMIZATION ITERATION:
+
+     a. PRIMAL SOLVE  (DASolver.__call__)
+        - For each SIMPLE/PIMPLE iteration:
+          - DARegression::calcInputFeatures()   → compute eta_1..eta_m from flow
+   state
+          - DARegression::compute()             → NN forward pass: theta → beta
+  field
+          - Solve momentum with modified turbulence (production * beta)
+          - Solve pressure
+          - Solve turbulence transport (SA/kOmega/kEpsilon with beta)
+        - Converge to steady state (or advance in time)
+
+     b. EVALUATE OBJECTIVE  (evalFunctions)
+        - J = || u(theta) - u_ref ||^2  (variance function)
+
+     c. ADJOINT SOLVE  (computeTotalDerivatives)
+        - Solve adjoint equations (reverse mode AD)
+        - Propagate gradients: dJ/du → dJ/d(beta) → dJ/d(theta)
+        - The NN Jacobian d(beta)/d(theta) is handled by AD through the
+          C++ forward pass — no manual backprop needed
+
+     d. OPTIMIZER UPDATE
+        - theta_new = optimizer_step(theta, dJ/d(theta))
+        - (SNOPT, IPOPT, or other gradient-based optimizer)
+
+  3. RESULT: Trained theta that minimizes mismatch with reference data
+
+  2.8 Three Model Types and When to Use Each
+  ┌────────────┬───────────────────────┬────────────┬──────────────────────────┐
+  │    Type    │       modelType       │ Gradient   │         Use case         │
+  │            │                       │  support   │                          │
+  ├────────────┼───────────────────────┼────────────┼──────────────────────────┤
+  │ Neural     │                       │ Full AD    │ Standard FIML — train NN │
+  │ Network    │ "neuralNetwork"       │ (reverse   │  weights end-to-end in   │
+  │            │                       │ mode)      │ DAFoam                   │
+  ├────────────┼───────────────────────┼────────────┼──────────────────────────┤
+  │ Radial     │                       │ Full AD    │ When you want a simpler, │
+  │ Basis      │ "radialBasisFunction" │ (reverse   │  more interpretable      │
+  │ Function   │                       │ mode)      │ model                    │
+  ├────────────┼───────────────────────┼────────────┼──────────────────────────┤
+  │            │                       │            │ When you've already      │
+  │            │                       │ Partial    │ trained a model in       │
+  │ External   │                       │ (commented │ Python/TensorFlow and    │
+  │ TensorFlow │ "externalTensorFlow"  │  out in    │ want to inject it into   │
+  │            │                       │ ADR/ADF)   │ the solver. Uses a       │
+  │            │                       │            │ Python callback          │
+  │            │                       │            │ (pyCalcBetaInterface)    │
+  └────────────┴───────────────────────┴────────────┴──────────────────────────┘
+  The neuralNetwork type is the most complete and best-supported path for
+  end-to-end FIML.
+
+  2.9 Generalization: The Prediction Phase
+
+  After training on Case A:
+  1. Extract the optimized theta (NN weights)
+  2. Set up Case B with the same regressionModel config and the trained theta
+  values
+  3. Run the primal solver — during each iteration, the NN computes beta from
+  Case B's local features
+  4. The correction generalizes to the extent that the same
+  feature-to-correction mapping holds
+
+  This is the payoff of FIML: a single trained NN that improves the turbulence
+  model across flow conditions.
+
+  ---
+  Summary: What You Need to Master
+
+  1. The "why": RANS models have spatially-varying errors. A scalar constant
+  can't fix them. A field correction (beta) can, but it doesn't generalize. An
+  NN that maps local features to beta does generalize.
+  2. Field inversion math: min_beta ||u(beta) - u_ref||^2 solved via
+  adjoint-based optimization. The adjoint gives dJ/d(beta) for all cells at
+  once.
+  3. Feature engineering: 11 Galilean-invariant, normalized features computed
+  from the local flow state (DARegression.C:164-351). The normalization pattern
+  A/(A+B+eps) is key.
+  4. NN architecture: Fully connected MLP with configurable hidden layers,
+  sigmoid/tanh/relu activation, flat parameter storage. Implemented cell-by-cell
+   in DARegression::compute().
+  5. The design variable switch: Instead of N_cells beta values, the design
+  variables become the ~O(100) NN weights. This is what DAInputRegressionPar
+  does — it exposes the NN parameter vector to the optimizer.
+  6. End-to-end differentiability: DAFoam's reverse-mode AD propagates gradients
+   through the entire chain: objective → flow solution → beta field → NN
+  weights. No separate backprop implementation needed.
+  7. Practical setup: The regressionModel dict in daOptions, the variance-type
+  objective function for data matching, and inputInfo of type regressionPar for
+  design variables. The test case runRegTests_DASimpleFoamRegPar.py is the
+  minimal working example.
