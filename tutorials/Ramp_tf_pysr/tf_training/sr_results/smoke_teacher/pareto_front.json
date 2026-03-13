@@ -1,0 +1,18 @@
+[
+  {
+    "complexity": 5,
+    "loss": 0.010737911,
+    "equation": "KoU2 * (VoS * PSoSS)",
+    "score": 0.0,
+    "sympy_format": "KoU2*PSoSS*VoS",
+    "lambda_format": "PySRFunction(X=>KoU2*PSoSS*VoS)"
+  },
+  {
+    "complexity": 7,
+    "loss": 0.00026421747,
+    "equation": "(KoU2 - (KoU2 + KoU2)) * -0.009034034",
+    "score": 1.8523816642879134,
+    "sympy_format": "(KoU2 - (KoU2 + KoU2))*(-0.009034034)",
+    "lambda_format": "PySRFunction(X=>(KoU2 - (KoU2 + KoU2))*(-0.009034034))"
+  }
+]

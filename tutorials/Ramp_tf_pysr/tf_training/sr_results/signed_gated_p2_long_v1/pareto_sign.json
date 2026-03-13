@@ -1,0 +1,90 @@
+[
+  {
+    "complexity": 1,
+    "loss": 0.7066677,
+    "equation": "KoU2",
+    "score": 0.0,
+    "sympy_format": "KoU2",
+    "lambda_format": "PySRFunction(X=>KoU2)"
+  },
+  {
+    "complexity": 3,
+    "loss": 0.67800057,
+    "equation": "KoU2 - -0.16931388",
+    "score": 0.02070620630651177,
+    "sympy_format": "KoU2 - 1*(-0.16931388)",
+    "lambda_format": "PySRFunction(X=>KoU2 - 1*(-0.16931388))"
+  },
+  {
+    "complexity": 5,
+    "loss": 0.6707519,
+    "equation": "(KoU2 - -0.6592263) - VoS",
+    "score": 0.005374403348133357,
+    "sympy_format": "KoU2 - VoS - 1*(-0.6592263)",
+    "lambda_format": "PySRFunction(X=>KoU2 - VoS - 1*(-0.6592263))"
+  },
+  {
+    "complexity": 6,
+    "loss": 0.6644547,
+    "equation": "tanh(KoU2 - PoD) + 0.70165336",
+    "score": 0.009432617679788554,
+    "sympy_format": "tanh(KoU2 - PoD) + 0.70165336",
+    "lambda_format": "PySRFunction(X=>tanh(KoU2 - PoD) + 0.70165336)"
+  },
+  {
+    "complexity": 7,
+    "loss": 0.6593735,
+    "equation": "(0.43989617 - (VoS * PoD)) + KoU2",
+    "score": 0.00767656249162448,
+    "sympy_format": "KoU2 - PoD*VoS + 0.43989617",
+    "lambda_format": "PySRFunction(X=>KoU2 - PoD*VoS + 0.43989617)"
+  },
+  {
+    "complexity": 8,
+    "loss": 0.53106713,
+    "equation": "(KoU2 + 0.93770653) - tanh(KoU2 * 29.206163)",
+    "score": 0.2164017066833819,
+    "sympy_format": "KoU2 - tanh(KoU2*29.206163) + 0.93770653",
+    "lambda_format": "PySRFunction(X=>KoU2 - tanh(KoU2*29.206163) + 0.93770653)"
+  },
+  {
+    "complexity": 10,
+    "loss": 0.44936508,
+    "equation": "((KoU2 - tanh(KoU2 * 24.005175)) * 2.0421927) + 1.360005",
+    "score": 0.08352639098480223,
+    "sympy_format": "(KoU2 - tanh(KoU2*24.005175))*2.0421927 + 1.360005",
+    "lambda_format": "PySRFunction(X=>(KoU2 - tanh(KoU2*24.005175))*2.0421927 + 1.360005)"
+  },
+  {
+    "complexity": 12,
+    "loss": 0.4380886,
+    "equation": "((KoU2 + 0.68152034) - tanh(KoU2 * 25.917233)) * (2.4333875 - PSoSS)",
+    "score": 0.012707240051170257,
+    "sympy_format": "(2.4333875 - PSoSS)*(KoU2 - tanh(KoU2*25.917233) + 0.68152034)",
+    "lambda_format": "PySRFunction(X=>(2.4333875 - PSoSS)*(KoU2 - tanh(KoU2*25.917233) + 0.68152034))"
+  },
+  {
+    "complexity": 14,
+    "loss": 0.42809585,
+    "equation": "(((KoU2 - 1.494302) * (tanh(KoU2 * 24.45803) + PoD)) + 1.8377881) * 1.31677",
+    "score": 0.011537026958908346,
+    "sympy_format": "((KoU2 - 1*1.494302)*(PoD + tanh(KoU2*24.45803)) + 1.8377881)*1.31677",
+    "lambda_format": "PySRFunction(X=>((KoU2 - 1*1.494302)*(PoD + tanh(KoU2*24.45803)) + 1.8377881)*1.31677)"
+  },
+  {
+    "complexity": 16,
+    "loss": 0.41849366,
+    "equation": "((((KoU2 - 1.346484) * (tanh(KoU2 * 24.450642) + PoD)) + 1.7724841) * 1.5768896) - PSoSS",
+    "score": 0.01134268931764867,
+    "sympy_format": "-PSoSS + ((KoU2 - 1*1.346484)*(PoD + tanh(KoU2*24.450642)) + 1.7724841)*1.5768896",
+    "lambda_format": "PySRFunction(X=>-PSoSS + ((KoU2 - 1*1.346484)*(PoD + tanh(KoU2*24.450642)) + 1.7724841)*1.5768896)"
+  },
+  {
+    "complexity": 18,
+    "loss": 0.38748813,
+    "equation": "tanh((KoU2 * -5.817833) - -4.6223073) + ((KoU2 - (tanh(KoU2 * 14.043257) - tanh(KoU2))) * 2.5708687)",
+    "score": 0.03848826220286314,
+    "sympy_format": "(KoU2 - (-tanh(KoU2) + tanh(KoU2*14.043257)))*2.5708687 + tanh(KoU2*(-5.817833) - 1*(-4.6223073))",
+    "lambda_format": "PySRFunction(X=>(KoU2 - (-tanh(KoU2) + tanh(KoU2*14.043257)))*2.5708687 + tanh(KoU2*(-5.817833) - 1*(-4.6223073)))"
+  }
+]

@@ -1,0 +1,98 @@
+[
+  {
+    "complexity": 1,
+    "loss": 0.80879015,
+    "equation": "PoD",
+    "score": 0.0,
+    "sympy_format": "PoD",
+    "lambda_format": "PySRFunction(X=>PoD)"
+  },
+  {
+    "complexity": 3,
+    "loss": 0.66437644,
+    "equation": "PoD - PSoSS",
+    "score": 0.09834528627576249,
+    "sympy_format": "-PSoSS + PoD",
+    "lambda_format": "PySRFunction(X=>-PSoSS + PoD)"
+  },
+  {
+    "complexity": 4,
+    "loss": 0.65460235,
+    "equation": "PoD - tanh(PSoSS)",
+    "score": 0.014820964505225787,
+    "sympy_format": "PoD - tanh(PSoSS)",
+    "lambda_format": "PySRFunction(X=>PoD - tanh(PSoSS))"
+  },
+  {
+    "complexity": 5,
+    "loss": 0.37296587,
+    "equation": "(PoD - 0.3656093) * 3.2698207",
+    "score": 0.5625410379224193,
+    "sympy_format": "(PoD - 1*0.3656093)*3.2698207",
+    "lambda_format": "PySRFunction(X=>(PoD - 1*0.3656093)*3.2698207)"
+  },
+  {
+    "complexity": 6,
+    "loss": 0.25858667,
+    "equation": "tanh((PoD - 0.4413447) * 11.853484)",
+    "score": 0.3662559958980641,
+    "sympy_format": "tanh((PoD - 1*0.4413447)*11.853484)",
+    "lambda_format": "PySRFunction(X=>tanh((PoD - 1*0.4413447)*11.853484))"
+  },
+  {
+    "complexity": 8,
+    "loss": 0.2517658,
+    "equation": "tanh((PoD - 0.4590953) * 21.98818) + -0.041111477",
+    "score": 0.013365813957094947,
+    "sympy_format": "tanh((PoD - 1*0.4590953)*21.98818) - 0.041111477",
+    "lambda_format": "PySRFunction(X=>tanh((PoD - 1*0.4590953)*21.98818) - 0.041111477)"
+  },
+  {
+    "complexity": 10,
+    "loss": 0.24680604,
+    "equation": "(tanh((PoD - 0.46063253) * 23.48665) + -0.04320999) * 0.935732",
+    "score": 0.009948262657554972,
+    "sympy_format": "(tanh((PoD - 1*0.46063253)*23.48665) - 0.04320999)*0.935732",
+    "lambda_format": "PySRFunction(X=>(tanh((PoD - 1*0.46063253)*23.48665) - 0.04320999)*0.935732)"
+  },
+  {
+    "complexity": 12,
+    "loss": 0.24634682,
+    "equation": "(tanh((PoD - 0.45629984) * 23.488232) + (PoD * -0.31769416)) - -0.061703872",
+    "score": 0.0009311922731885146,
+    "sympy_format": "PoD*(-0.31769416) + tanh((PoD - 1*0.45629984)*23.488232) - 1*(-0.061703872)",
+    "lambda_format": "PySRFunction(X=>PoD*(-0.31769416) + tanh((PoD - 1*0.45629984)*23.488232) - 1*(-0.061703872))"
+  },
+  {
+    "complexity": 15,
+    "loss": 0.24605444,
+    "equation": "tanh((PoD - 0.45629984) * 23.488232) + (PoD * (tanh(VoS - 0.0642749) - 0.45629984))",
+    "score": 0.0003958560603769858,
+    "sympy_format": "PoD*(tanh(VoS - 1*0.0642749) - 1*0.45629984) + tanh((PoD - 1*0.45629984)*23.488232)",
+    "lambda_format": "PySRFunction(X=>PoD*(tanh(VoS - 1*0.0642749) - 1*0.45629984) + tanh((PoD - 1*0.45629984)*23.488232))"
+  },
+  {
+    "complexity": 16,
+    "loss": 0.24343497,
+    "equation": "(((VoS * -0.6997378) - 0.16065703) + (tanh((PoD - 0.46091434) * 25.454018) * 0.88488936)) + VoS",
+    "score": 0.010702969062192919,
+    "sympy_format": "VoS*(-0.6997378) + VoS + tanh((PoD - 1*0.46091434)*25.454018)*0.88488936 - 1*0.16065703",
+    "lambda_format": "PySRFunction(X=>VoS*(-0.6997378) + VoS + tanh((PoD - 1*0.46091434)*25.454018)*0.88488936 - 1*0.16065703)"
+  },
+  {
+    "complexity": 17,
+    "loss": 0.23868299,
+    "equation": "(((VoS * (0.6938759 - tanh(PSoSS))) + tanh((PoD - 0.4514813) * 20.167833)) * 0.87319726) + -0.17881331",
+    "score": 0.019713573391233693,
+    "sympy_format": "(VoS*(0.6938759 - tanh(PSoSS)) + tanh((PoD - 1*0.4514813)*20.167833))*0.87319726 - 0.17881331",
+    "lambda_format": "PySRFunction(X=>(VoS*(0.6938759 - tanh(PSoSS)) + tanh((PoD - 1*0.4514813)*20.167833))*0.87319726 - 0.17881331)"
+  },
+  {
+    "complexity": 18,
+    "loss": 0.23627007,
+    "equation": "((((PSoSS * -0.29182938) - 0.087767154) + tanh((PoD - 0.47266775) * 54.456497)) * 0.8499402) + (VoS * 0.2851134)",
+    "score": 0.010160754661976159,
+    "sympy_format": "VoS*0.2851134 + (PSoSS*(-0.29182938) + tanh((PoD - 1*0.47266775)*54.456497) - 1*0.087767154)*0.8499402",
+    "lambda_format": "PySRFunction(X=>VoS*0.2851134 + (PSoSS*(-0.29182938) + tanh((PoD - 1*0.47266775)*54.456497) - 1*0.087767154)*0.8499402)"
+  }
+]

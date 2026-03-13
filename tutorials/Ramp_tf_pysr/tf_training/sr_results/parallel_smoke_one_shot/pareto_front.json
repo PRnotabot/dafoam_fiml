@@ -1,0 +1,18 @@
+[
+  {
+    "complexity": 3,
+    "loss": 0.07516441,
+    "equation": "PoD - 0.2030415",
+    "score": 0.0,
+    "sympy_format": "PoD - 1*0.2030415",
+    "lambda_format": "PySRFunction(X=>PoD - 1*0.2030415)"
+  },
+  {
+    "complexity": 5,
+    "loss": 0.0029664817,
+    "equation": "(PoD * VoS) * -0.16967559",
+    "score": 1.6161506049196797,
+    "sympy_format": "PoD*VoS*(-0.16967559)",
+    "lambda_format": "PySRFunction(X=>PoD*VoS*(-0.16967559))"
+  }
+]

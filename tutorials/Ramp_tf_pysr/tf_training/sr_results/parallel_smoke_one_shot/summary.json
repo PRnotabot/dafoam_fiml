@@ -1,0 +1,156 @@
+{
+  "run_tag": "parallel_smoke_one_shot",
+  "target_source": "teacher",
+  "features": [
+    "PoD",
+    "VoS",
+    "PSoSS",
+    "KoU2"
+  ],
+  "cases": [
+    "c1_data",
+    "c2_data"
+  ],
+  "rows_total": 40000,
+  "rows_train": 28000,
+  "rows_val": 6000,
+  "rows_test": 6000,
+  "rows_distill": 200,
+  "active_threshold": 0.01,
+  "active_fraction": 0.13405,
+  "distill_active_fraction": 0.5,
+  "teacher_model_path": "model",
+  "pysr_parallelism": "multiprocessing",
+  "pysr_worker_count": 2,
+  "pysr_procs": 2,
+  "pysr_julia_num_threads": 1,
+  "pysr_cluster_manager": "",
+  "pysr_batching": 0,
+  "pysr_batch_size": 50,
+  "pysr_precision": 32,
+  "pysr_deterministic": 0,
+  "populations_warning": "",
+  "train_target_metrics": {
+    "mse": 0.0010603585886843061,
+    "rmse": 0.0325631477084803,
+    "mae": 0.019328521752191876,
+    "max_error": 0.28779746321061084,
+    "r2": -3.3321247071153657,
+    "correlation": -0.19245095989256816,
+    "rows": 28000
+  },
+  "train_raw_metrics": {
+    "mse": 0.0013317537548948935,
+    "rmse": 0.036493201488700514,
+    "mae": 0.020323679558072433,
+    "max_error": 0.38849444586096193,
+    "r2": -2.1151217177107986,
+    "correlation": -0.19081785478916072,
+    "rows": 28000
+  },
+  "train_teacher_metrics": {
+    "mse": 0.0010603585886843061,
+    "rmse": 0.0325631477084803,
+    "mae": 0.019328521752191876,
+    "max_error": 0.28779746321061084,
+    "r2": -3.3321247071153657,
+    "correlation": -0.19245095989256814,
+    "rows": 28000
+  },
+  "val_target_metrics": {
+    "mse": 0.0010398333048954357,
+    "rmse": 0.03224644639174115,
+    "mae": 0.019083843942070463,
+    "max_error": 0.31355734216773584,
+    "r2": -3.406288302568841,
+    "correlation": -0.19371691726657964,
+    "rows": 6000
+  },
+  "val_raw_metrics": {
+    "mse": 0.0012564500633361368,
+    "rmse": 0.03544643936047931,
+    "mae": 0.020015982137890496,
+    "max_error": 0.3930835737152367,
+    "r2": -2.4144761996517325,
+    "correlation": -0.19937692192119155,
+    "rows": 6000
+  },
+  "val_teacher_metrics": {
+    "mse": 0.001039833304895436,
+    "rmse": 0.03224644639174115,
+    "mae": 0.019083843942070463,
+    "max_error": 0.3135573421677358,
+    "r2": -3.406288302568841,
+    "correlation": -0.19371691726657964,
+    "rows": 6000
+  },
+  "test_target_metrics": {
+    "mse": 0.0010062853348194794,
+    "rmse": 0.03172200080101316,
+    "mae": 0.018955704421230617,
+    "max_error": 0.2360574140439825,
+    "r2": -3.3367712516889414,
+    "correlation": -0.15867872619263804,
+    "rows": 6000
+  },
+  "test_raw_metrics": {
+    "mse": 0.001300778488353493,
+    "rmse": 0.03606630682996934,
+    "mae": 0.020079187480559667,
+    "max_error": 0.35630600750534536,
+    "r2": -2.0198323577614783,
+    "correlation": -0.1683832260350022,
+    "rows": 6000
+  },
+  "test_teacher_metrics": {
+    "mse": 0.0010062853348194794,
+    "rmse": 0.03172200080101316,
+    "mae": 0.018955704421230613,
+    "max_error": 0.2360574140439825,
+    "r2": -3.3367712516889414,
+    "correlation": -0.1586787261926381,
+    "rows": 6000
+  },
+  "full_target_metrics": {
+    "mse": 0.0010491688080362515,
+    "rmse": 0.03239087538237044,
+    "mae": 0.019235897481029475,
+    "max_error": 0.31355734216773584,
+    "r2": -3.34331913982194,
+    "correlation": -0.18767325732085477,
+    "rows": 40000
+  },
+  "full_raw_metrics": {
+    "mse": 0.0013158119111798701,
+    "rmse": 0.03627412178371615,
+    "mae": 0.020240851133418225,
+    "max_error": 0.3930835737152367,
+    "r2": -2.1397674636426065,
+    "correlation": -0.18855297993316847,
+    "rows": 40000
+  },
+  "full_teacher_metrics": {
+    "mse": 0.0010491688080362515,
+    "rmse": 0.03239087538237044,
+    "mae": 0.019235897481029475,
+    "max_error": 0.3135573421677358,
+    "r2": -3.34331913982194,
+    "correlation": -0.1876732573208548,
+    "rows": 40000
+  },
+  "teacher_vs_raw_full_metrics": {
+    "mse": 0.00016795001258198102,
+    "rmse": 0.012959552946841223,
+    "mae": 0.005681180270590892,
+    "max_error": 0.26182605741008214,
+    "r2": 0.5992406053305701,
+    "correlation": 0.777384360117809,
+    "rows": 40000
+  },
+  "teacher_param_count": 2854,
+  "best_equation": "(PoD * VoS) * -0.16967559",
+  "best_sympy": "PoD*VoS*(-0.16967559)",
+  "beta_expression": "1.0 + (PoD*VoS*(-0.16967559))",
+  "best_loss": 0.0029664817,
+  "best_complexity": 5
+}
